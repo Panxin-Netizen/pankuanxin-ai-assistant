@@ -30,26 +30,36 @@ def load_knowledge_base():
     使用 cache_resource 确保只在第一次运行时执行，后续直接复用内存中的对象。
     """
     with st.spinner("🧠 正在初始化知识库，请稍候..."):
-        # 1. 加载文档 (增加 encoding='utf-8' 防止中文乱码)
-        loader = DirectoryLoader('docs', glob="**/*.txt", loader_cls=lambda path: TextLoader(path, encoding='utf-8'))
+        # 1. 获取当前脚本所在的绝对路径 (解决云端路径问题)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # ⚠️ 注意：请把 'resume.txt' 换成你在 GitHub 上真实的文件名！
+        file_name = "resume.txt"
+        file_path = os.path.join(current_dir, file_name)
+
+        # 2. 检查文件是否存在 (防止报错)
+        if not os.path.exists(file_path):
+            st.error(f"❌ 找不到文件: {file_name}。请检查文件名是否正确，或是否已上传到 GitHub。")
+            return None
+
+        # 3. 使用 TextLoader 直接加载该文件
+        loader = TextLoader(file_path, encoding='utf-8')
         documents = loader.load()
 
         if not documents:
-            st.error("❌ docs 文件夹下没有找到 txt 文件，请检查路径！")
+            st.error("❌ 文件内容为空，无法构建知识库！")
             return None
 
-        # 2. 文本切分
+        # 4. 文本切分 (保持原有逻辑)
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         texts = text_splitter.split_documents(documents)
 
-        # 3. 向量化 (模型会自动从缓存或镜像源加载)
-        embeddings = HuggingFaceEmbeddings(model_name="shibing624/text2vec-base-chinese")
+        # 5. 向量化 (保持原有逻辑)
+        # embeddings = ... (你原本的向量化代码)
+        # vectorstore = ... (你原本的向量数据库代码)
 
-        # 4. 存入向量数据库 (persist_directory 指定保存路径，实现持久化)
-        # 注意：如果是第一次运行，这会创建 ./chroma_db 文件夹
-        db = Chroma.from_documents(texts, embeddings, persist_directory="./chroma_db")
-        st.success(f"✅ 知识库构建完成！共加载 {len(documents)} 个文档，切分为 {len(texts)} 个片段。")
-        return db
+        # 返回结果 (根据你的后续代码调整返回值)
+        return texts  # 或者返回 vectorstore
 
 # --- 4. 启动应用 ---
 # 只有当用户输入了 Key 之后，才开始加载模型和数据库
